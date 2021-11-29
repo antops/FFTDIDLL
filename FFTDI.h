@@ -1,0 +1,111 @@
+
+/**************************************************************************************
+* version 1.0 2016/11/7 modified 20190227
+* Designer liyun & MingJin
+* E-mail 465120258@qq.com jinmingaps@163.com
+* Fuction： 
+* 计算平行面间传播
+* 输入 Ex Ey 得到目标面的Ex Ey Ez Hx Hy Hz
+* 需要输入参数：频率（默认10.65e9）、目标距离、计算点数N*M、
+目标面倾斜角（x轴方向）、ds（默认波长/3.5）
+* version 1.2 2019/05/21 省内存版
+* E-mail jinmingaps@163.com
+* Modification:
+* 计算流程省内存
+***************************************************************************************/
+#pragma once
+#ifndef FFTDI_H
+#define FFTDI_H
+
+#include <cmath>
+#include <complex>
+#include <omp.h>
+
+
+class _declspec(dllexport) FFTDI
+{
+public:
+	FFTDI(double f = 10.65e9, double xp = 0, double yp = 0, double zp = 1,int N = 361, int M = 361);
+	~FFTDI();
+
+	void Initialization(); 
+	void FreeCal();
+	void Setds(double ds1); //设置ds
+	void Setds(double _du, double _dv);
+	void SetthreadNum(int _threadNum) { threadNum = _threadNum; }
+
+	//设置输入并补0
+	void SetInput(std::complex<double> ** ExIn, std::complex<double> ** EyIn);
+
+	void StartCal();
+	
+	void SourceFFT();
+	void FFTToExy1();
+	void FFTToEz1();
+	void FFTToHx1();
+	void FFTToHy1();
+	void FFTToHz1();
+
+
+	//输出Ex Ey Ez Hx Hy Hz 并调用FreeCal
+	void output(std::complex<double> ** Ex, std::complex<double> ** Ey, std::complex<double> ** Ez, 
+		std::complex<double> ** Hx, std::complex<double> ** Hy, std::complex<double> ** Hz );
+	void outsource(std::complex<double> ** Ex, std::complex<double> ** Ey);
+private:
+	//定义复数的乘
+	void MulComp(const double r1, const double i1, const double r2, const double i2, double & outR, double & outI);
+	std::complex<double> MulComp(std::complex<double> & In, double r2, double i2);
+	//插值函数
+	double InserVal(const double x0, const double yUp, const double y0, const double yDown);
+
+	//对输入场进行插值
+	//void InserExEy();
+
+private:
+	double f; // 频率 默认 10.65e9
+	double lamda; // 波长
+	double k;
+
+	int threadNum;
+
+	//double theta;
+	//double theta_h0;
+	double dx;
+	double dy;
+	double xp;	//口面位移
+	double yp;  //口面位移
+	double zp; //目标距离
+
+	int N, M; //计算的点数 一般设为奇数 默认361
+	int N2, M2; // N2 = 2 * N -1
+
+	//传递函数
+	std::complex<double> ** HExy, ** HEz_x0, **HEz_y0;
+	std::complex<double> ** HHx_x0, ** HHx_y0,
+		** HHy_x0, ** HHy_y0,
+		** HHz_x0, ** HHz_y0;
+
+	//补0后的输入
+	std::complex<double> ** Ex0, ** Ey0;
+
+	// 帕斯维尔定理
+	double 	PowerHExy, PowerFFTHExy;
+	double 	PowerHEz_x0, PowerFFTHEz_x0;
+	double 	PowerHEz_y0, PowerFFTHEz_y0;
+	double 	PowerHHx_x0, PowerFFTHHx_x0;
+	double 	PowerHHx_y0, PowerFFTHHx_y0;
+	double 	PowerHHy_x0, PowerFFTHHy_x0;
+	double 	PowerHHy_y0, PowerFFTHHy_y0;
+	double 	PowerHHz_x0, PowerFFTHHz_x0;
+	double 	PowerHHz_y0, PowerFFTHHz_y0;
+
+	//Ex1 Ey1 Ez1 Hx1 Hy1 Hz1
+	std::complex<double> ** Ex1, ** Ey1, **Ez1;
+	std::complex<double> ** Hx1, ** Hy1, **Hz1;
+	std::complex<double> ** tempEx1, ** tempEy1, **tempEz1;
+	std::complex<double> ** tempHx1, ** tempHy1, **tempHz1;
+};
+
+
+
+#endif // !CALCUlATION_H
